@@ -552,14 +552,41 @@ function PlanModal({ business, onClose, onUpgrade }) {
 
 // ─── Settings View ────────────────────────────────────────────────────────────
 function SettingsView({ business, onSave }) {
-  const [form,     setForm]     = useState({ name:business?.name||"", address:business?.address||"", phone:business?.phone||"", email:business?.email||"", bio:business?.bio||"" });
-  const [services, setServices] = useState(business?.services||[]);
-  const [features, setFeatures] = useState({ nontoxic:business?.feature_nontoxic||false, express:business?.feature_express||false, luxury:business?.feature_luxury||false, pickup:business?.feature_pickup||false });
-  const [hours,    setHours]    = useState(DAYS.reduce((acc,d)=>({...acc,[d]:{open:business?.hours?.[d]?.open||"7:00 AM",close:business?.hours?.[d]?.close||"7:00 PM"}}),{}));
+  const [form,     setForm]     = useState({ name:"", address:"", phone:"", email:"", bio:"" });
+  const [services, setServices] = useState([]);
+  const [features, setFeatures] = useState({ nontoxic:false, express:false, luxury:false, pickup:false });
+  const [hours,    setHours]    = useState(DAYS.reduce((acc,d)=>({...acc,[d]:{open:"7:00 AM",close:"7:00 PM"}}),{}));
   const [notify,   setNotify]   = useState({ ready:true, dropoff:true, pickup:true, hangDry:true });
   const [saving,   setSaving]   = useState(false);
   const [saved,    setSaved]    = useState(false);
   const [showPlan, setShowPlan] = useState(false);
+  const [loaded,   setLoaded]   = useState(false);
+
+  // Load from business prop once it arrives from Supabase
+  useEffect(() => {
+    if (!business || loaded) return;
+    setForm({
+      name:    business.name    || "",
+      address: business.address || "",
+      phone:   business.phone   || "",
+      email:   business.email   || "",
+      bio:     business.bio     || "",
+    });
+    setServices(Array.isArray(business.services) ? business.services : []);
+    setFeatures({
+      nontoxic: business.feature_nontoxic || false,
+      express:  business.feature_express  || false,
+      luxury:   business.feature_luxury   || false,
+      pickup:   business.feature_pickup   || false,
+    });
+    if (business.hours) {
+      setHours(h => ({
+        ...DAYS.reduce((acc,d)=>({...acc,[d]:{open:"7:00 AM",close:"7:00 PM"}}),{}),
+        ...business.hours
+      }));
+    }
+    setLoaded(true);
+  }, [business]);
 
   const toggleSvc = (id) => {
     setServices(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -571,14 +598,34 @@ function SettingsView({ business, onSave }) {
 
   const save = async () => {
     setSaving(true);
-    await onSave({ name:form.name, address:form.address, phone:form.phone, email:form.email, bio:form.bio, services, feature_nontoxic:features.nontoxic, feature_express:features.express, feature_luxury:features.luxury, feature_pickup:features.pickup, hours });
-    setSaving(false); setSaved(true);
+    await onSave({
+      name:             form.name,
+      address:          form.address,
+      phone:            form.phone,
+      email:            form.email,
+      bio:              form.bio,
+      services,
+      feature_nontoxic: features.nontoxic,
+      feature_express:  features.express,
+      feature_luxury:   features.luxury,
+      feature_pickup:   features.pickup,
+      hours,
+    });
+    setSaving(false);
+    setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleUpgrade = () => {
+    setShowPlan(false);
+    const subject = encodeURIComponent("Upgrade to Pro — " + (business?.name || ""));
+    const body = encodeURIComponent("Hi,\n\nI'd like to upgrade my Dry. subscription to the Pro plan ($299/month).\n\nBusiness name: " + (business?.name || "") + "\nEmail: " + (business?.email || "") + "\n\nThank you.");
+    window.location.href = `mailto:hello@drytheapp.com?subject=${subject}&body=${body}`;
   };
 
   return (
     <div style={{ padding:"28px 32px", overflowY:"auto" }}>
-      {showPlan && <PlanModal business={business} onClose={() => setShowPlan(false)} onUpgrade={() => { setShowPlan(false); window.open("mailto:hello@drytheapp.com?subject=Upgrade to Pro — " + (business?.name||""), "_blank"); }} />}
+      {showPlan && <PlanModal business={business} onClose={() => setShowPlan(false)} onUpgrade={handleUpgrade} />}
 
       <SectionHeader title="Settings" sub="Changes save instantly and update your live consumer listing" />
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20 }}>

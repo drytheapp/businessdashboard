@@ -477,27 +477,109 @@ function AnalyticsView({ orders }) {
   );
 }
 
+// ─── Plan Comparison Modal ────────────────────────────────────────────────────
+function PlanModal({ business, onClose, onUpgrade }) {
+  const isPro = business?.plan === "pro";
+  const features = [
+    ["Unlimited orders",                        true,  true ],
+    ["Full order management dashboard",         true,  true ],
+    ["Automatic customer notifications",        true,  true ],
+    ["Basic analytics",                         true,  true ],
+    ["Consumer app listing",                    true,  true ],
+    ["Hang dry tracking",                       true,  true ],
+    ["Live profile updates",                    true,  true ],
+    ["Priority + featured listing in app",      false, true ],
+    ["Advanced analytics & insights",           false, true ],
+    ["Zip code & demographic reports",          false, true ],
+    ["At-risk customer alerts",                 false, true ],
+    ["Customer visit frequency tracking",       false, true ],
+    ["Dedicated onboarding support",            false, true ],
+  ];
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(44,31,61,0.5)", backdropFilter:"blur(6px)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:500, padding:20 }}>
+      <div style={{ background:C.white, borderRadius:28, width:"min(760px,95vw)", maxHeight:"90vh", overflow:"hidden", display:"flex", flexDirection:"column", boxShadow:"0 32px 80px rgba(44,31,61,0.28)" }}>
+        <div style={{ padding:"24px 32px 20px", borderBottom:`1px solid ${C.borderLight}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+          <div style={{ fontSize:20, fontFamily:"Palatino Linotype,Georgia,serif", color:C.ink }}>Compare Plans</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", fontSize:20, color:C.inkLight, cursor:"pointer", width:32, height:32, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+        </div>
+        <div style={{ overflowY:"auto", padding:"28px 32px" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1.4fr 1fr 1fr", gap:0, marginBottom:24 }}>
+            <div />
+            <div style={{ background:C.offWhite, borderRadius:"16px 0 0 0", padding:"20px 16px", textAlign:"center", border:`1px solid ${C.borderLight}`, borderRight:"none" }}>
+              <div style={{ fontSize:11, letterSpacing:1.5, color:C.inkLight, textTransform:"uppercase", fontFamily:"Georgia", marginBottom:8 }}>Basic</div>
+              <div style={{ fontSize:28, color:C.lavenderDeep, fontFamily:"Palatino Linotype,Georgia,serif" }}>$149<span style={{ fontSize:13, color:C.inkLight }}>/mo</span></div>
+              {!isPro && <div style={{ marginTop:10, fontSize:11, color:C.success, fontFamily:"Georgia" }}>✓ Your current plan</div>}
+            </div>
+            <div style={{ background:`linear-gradient(135deg,${C.lavenderDeep},${C.lavender})`, borderRadius:"0 16px 0 0", padding:"20px 16px", textAlign:"center" }}>
+              <div style={{ fontSize:11, letterSpacing:1.5, color:`${C.white}80`, textTransform:"uppercase", fontFamily:"Georgia", marginBottom:8 }}>Pro</div>
+              <div style={{ fontSize:28, color:C.white, fontFamily:"Palatino Linotype,Georgia,serif" }}>$299<span style={{ fontSize:13, color:`${C.white}70` }}>/mo</span></div>
+              {isPro && <div style={{ marginTop:10, fontSize:11, color:`${C.white}90`, fontFamily:"Georgia" }}>✓ Your current plan</div>}
+              {!isPro && <div style={{ marginTop:10, fontSize:10, background:`${C.white}20`, color:C.white, padding:"3px 10px", borderRadius:20, display:"inline-block", fontFamily:"Georgia" }}>RECOMMENDED</div>}
+            </div>
+          </div>
+          {features.map(([label, basic, pro], i) => (
+            <div key={i} style={{ display:"grid", gridTemplateColumns:"1.4fr 1fr 1fr", gap:0, borderBottom:`1px solid ${C.borderLight}` }}>
+              <div style={{ padding:"13px 0", fontSize:13, color:C.ink, fontFamily:"Georgia" }}>{label}</div>
+              <div style={{ padding:"13px 16px", textAlign:"center", background:C.offWhite, borderLeft:`1px solid ${C.borderLight}`, borderRight:`1px solid ${C.borderLight}` }}>
+                {basic ? <span style={{ color:C.success, fontSize:16 }}>✓</span> : <span style={{ color:C.borderLight, fontSize:16 }}>—</span>}
+              </div>
+              <div style={{ padding:"13px 16px", textAlign:"center", background:C.lavenderGlow }}>
+                {pro ? <span style={{ color:C.lavender, fontSize:16 }}>✓</span> : <span style={{ color:C.borderLight, fontSize:16 }}>—</span>}
+              </div>
+            </div>
+          ))}
+          {!isPro && (
+            <div style={{ marginTop:28, textAlign:"center" }}>
+              <div style={{ fontSize:13, color:C.inkLight, fontFamily:"Georgia", fontStyle:"italic", marginBottom:16 }}>Upgrade takes effect immediately. Cancel anytime from Settings.</div>
+              <button onClick={onUpgrade} style={{ padding:"14px 40px", background:`linear-gradient(135deg,${C.lavenderDeep},${C.lavender})`, color:C.white, border:"none", borderRadius:14, fontSize:15, fontFamily:"Palatino Linotype,Georgia,serif", fontStyle:"italic", cursor:"pointer", boxShadow:`0 6px 20px rgba(123,94,167,0.35)` }}>
+                Upgrade to Pro — $299/month →
+              </button>
+              <div style={{ fontSize:11, color:C.inkLight, fontFamily:"Georgia", marginTop:12, fontStyle:"italic" }}>
+                Online payment coming soon. To upgrade now email hello@drytheapp.com
+              </div>
+            </div>
+          )}
+          {isPro && (
+            <div style={{ marginTop:28, textAlign:"center" }}>
+              <div style={{ fontSize:14, color:C.success, fontFamily:"Georgia" }}>✓ You're on the Pro plan. Priority listing, advanced analytics, and all insights are active.</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Settings View ────────────────────────────────────────────────────────────
 function SettingsView({ business, onSave }) {
-  const [form, setForm] = useState({ name:business?.name||"", address:business?.address||"", phone:business?.phone||"", email:business?.email||"", bio:business?.bio||"" });
+  const [form,     setForm]     = useState({ name:business?.name||"", address:business?.address||"", phone:business?.phone||"", email:business?.email||"", bio:business?.bio||"" });
   const [services, setServices] = useState(business?.services||[]);
   const [features, setFeatures] = useState({ nontoxic:business?.feature_nontoxic||false, express:business?.feature_express||false, luxury:business?.feature_luxury||false, pickup:business?.feature_pickup||false });
-  const [hours, setHours] = useState(DAYS.reduce((acc,d)=>({...acc,[d]:{open:business?.hours?.[d]?.open||"7:00 AM",close:business?.hours?.[d]?.close||"7:00 PM"}}),{}));
-  const [notify, setNotify] = useState({ ready:true, dropoff:true, pickup:true, hangDry:true });
-  const [saving, setSaving] = useState(false);
-  const [saved,  setSaved]  = useState(false);
+  const [hours,    setHours]    = useState(DAYS.reduce((acc,d)=>({...acc,[d]:{open:business?.hours?.[d]?.open||"7:00 AM",close:business?.hours?.[d]?.close||"7:00 PM"}}),{}));
+  const [notify,   setNotify]   = useState({ ready:true, dropoff:true, pickup:true, hangDry:true });
+  const [saving,   setSaving]   = useState(false);
+  const [saved,    setSaved]    = useState(false);
+  const [showPlan, setShowPlan] = useState(false);
 
-  const toggleSvc = id => setServices(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id]);
+  const toggleSvc = (id) => {
+    setServices(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleFeature = (key) => {
+    setFeatures(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const save = async () => {
     setSaving(true);
     await onSave({ name:form.name, address:form.address, phone:form.phone, email:form.email, bio:form.bio, services, feature_nontoxic:features.nontoxic, feature_express:features.express, feature_luxury:features.luxury, feature_pickup:features.pickup, hours });
     setSaving(false); setSaved(true);
-    setTimeout(()=>setSaved(false),2500);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   return (
     <div style={{ padding:"28px 32px", overflowY:"auto" }}>
+      {showPlan && <PlanModal business={business} onClose={() => setShowPlan(false)} onUpgrade={() => { setShowPlan(false); window.open("mailto:hello@drytheapp.com?subject=Upgrade to Pro — " + (business?.name||""), "_blank"); }} />}
+
       <SectionHeader title="Settings" sub="Changes save instantly and update your live consumer listing" />
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20 }}>
 
@@ -527,10 +609,10 @@ function SettingsView({ business, onSave }) {
         <Card style={{ padding:"24px" }}>
           <div style={{ fontSize:16, fontFamily:"Palatino Linotype,Georgia,serif", color:C.ink, marginBottom:6 }}>Services Offered</div>
           <div style={{ fontSize:12, color:C.inkLight, fontFamily:"Georgia", fontStyle:"italic", marginBottom:16 }}>Toggled-off services appear greyed out on your consumer listing.</div>
-          {ALL_SERVICES.map(s=>(
-            <div key={s.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", borderBottom:`1px solid ${C.borderLight}`, cursor:"pointer" }} onClick={()=>toggleSvc(s.id)}>
-              <div style={{ fontSize:14, color:C.ink, fontFamily:"Georgia" }}>{s.label}</div>
-              <Toggle on={services.includes(s.id)} onToggle={()=>toggleSvc(s.id)} />
+          {ALL_SERVICES.map(s => (
+            <div key={s.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", borderBottom:`1px solid ${C.borderLight}` }}>
+              <div style={{ fontSize:14, color:C.ink, fontFamily:"Georgia", cursor:"pointer", flex:1 }} onClick={() => toggleSvc(s.id)}>{s.label}</div>
+              <Toggle on={services.includes(s.id)} onToggle={() => toggleSvc(s.id)} />
             </div>
           ))}
         </Card>
@@ -539,13 +621,13 @@ function SettingsView({ business, onSave }) {
           <Card style={{ padding:"24px" }}>
             <div style={{ fontSize:16, fontFamily:"Palatino Linotype,Georgia,serif", color:C.ink, marginBottom:6 }}>Special Features</div>
             <div style={{ fontSize:12, color:C.inkLight, fontFamily:"Georgia", fontStyle:"italic", marginBottom:16 }}>Feature badges appear on your listing and in consumer search filters.</div>
-            {[["nontoxic","🌿 Non-Toxic Chemicals","GreenEarth or similar solvents"],["express","⚡ Express Same-Day","Drop-offs before 10am ready same day"],["luxury","✨ Luxury Garments","Couture and designer care"],["pickup","🚗 Pickup & Delivery","You offer pickup service"]].map(([key,label,desc])=>(
+            {[["nontoxic","🌿 Non-Toxic Chemicals","GreenEarth or similar solvents"],["express","⚡ Express Same-Day","Drop-offs before 10am ready same day"],["luxury","✨ Luxury Garments","Couture and designer care"],["pickup","🚗 Pickup & Delivery","You offer pickup service"]].map(([key,label,desc]) => (
               <div key={key} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 0", borderBottom:`1px solid ${C.borderLight}` }}>
-                <div>
+                <div style={{ flex:1, cursor:"pointer" }} onClick={() => toggleFeature(key)}>
                   <div style={{ fontSize:13, color:C.ink, fontFamily:"Georgia" }}>{label}</div>
                   <div style={{ fontSize:11, color:C.inkLight, fontFamily:"Georgia", fontStyle:"italic", marginTop:2 }}>{desc}</div>
                 </div>
-                <Toggle on={features[key]} onToggle={()=>setFeatures(f=>({...f,[key]:!f[key]}))} />
+                <Toggle on={features[key]} onToggle={() => toggleFeature(key)} />
               </div>
             ))}
           </Card>
@@ -557,15 +639,13 @@ function SettingsView({ business, onSave }) {
               <div style={{ fontSize:20, color:C.white, fontFamily:"Palatino Linotype,Georgia,serif", marginTop:4, textTransform:"capitalize" }}>
                 {business?.plan||"Basic"} — ${business?.plan==="pro"?"299":"149"}/month
               </div>
+              {business?.plan==="pro" && (
+                <div style={{ fontSize:12, color:`${C.white}80`, fontFamily:"Georgia", fontStyle:"italic", marginTop:6 }}>✓ Priority listing · ✓ Advanced analytics · ✓ All insights</div>
+              )}
             </div>
-            {business?.plan!=="pro" && (
-              <button style={{ width:"100%", padding:"13px", background:`linear-gradient(135deg,${C.lavenderDeep},${C.lavender})`, color:C.white, border:"none", borderRadius:12, fontSize:14, fontFamily:"Georgia", cursor:"pointer" }}>
-                Upgrade to Pro — $299/month
-              </button>
-            )}
-            {business?.plan==="pro" && (
-              <div style={{ fontSize:13, color:C.success, fontFamily:"Georgia" }}>✓ Priority listing · ✓ Advanced analytics · ✓ Customer insights</div>
-            )}
+            <button onClick={() => setShowPlan(true)} style={{ width:"100%", padding:"13px", background:business?.plan==="pro"?C.offWhite:`linear-gradient(135deg,${C.lavenderDeep},${C.lavender})`, color:business?.plan==="pro"?C.lavender:C.white, border:business?.plan==="pro"?`1.5px solid ${C.lavenderSoft}`:"none", borderRadius:12, fontSize:14, fontFamily:"Georgia", cursor:"pointer" }}>
+              {business?.plan==="pro" ? "View Plan Details" : "Upgrade to Pro — $299/month →"}
+            </button>
           </Card>
         </div>
       </div>

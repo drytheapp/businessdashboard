@@ -720,6 +720,194 @@ function SettingsView({ business, onSave }) {
   );
 }
 
+// ─── Trial Banner ─────────────────────────────────────────────────────────────
+function TrialBanner({ business, onUpgrade }) {
+  if (!business?.trial_ends_at) return null;
+  const trialEnd  = new Date(business.trial_ends_at);
+  const now       = new Date();
+  const daysLeft  = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+  const isExpired = daysLeft <= 0;
+  if (business.stripe_subscription_id) return null; // paying customer, no banner
+
+  return (
+    <div style={{ background:isExpired?"#fdf0f0":daysLeft<=3?C.warningLight:C.lavenderGlow, borderBottom:`1px solid ${isExpired?"#f5c6c6":daysLeft<=3?C.warning:C.lavenderSoft}`, padding:"10px 32px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, flexShrink:0 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontSize:16 }}>{isExpired?"⛔":daysLeft<=3?"⚠️":"🌿"}</span>
+        <div style={{ fontSize:13, color:isExpired?"#c0392b":daysLeft<=3?C.warning:C.lavenderDeep, fontFamily:"Georgia" }}>
+          {isExpired
+            ? "Your free trial has ended. Add a payment method to keep your listing active."
+            : daysLeft===1
+            ? "Your free trial ends tomorrow. Add a payment method to stay live."
+            : `Free trial — ${daysLeft} days remaining. No credit card required yet.`}
+        </div>
+      </div>
+      <button onClick={onUpgrade} style={{ padding:"8px 18px", background:isExpired?"#c0392b":`linear-gradient(135deg,${C.lavenderDeep},${C.lavender})`, color:C.white, border:"none", borderRadius:10, fontSize:12, fontFamily:"Georgia", cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}>
+        {isExpired ? "Reactivate →" : "Add Payment →"}
+      </button>
+    </div>
+  );
+}
+
+// ─── Onboarding Flow ──────────────────────────────────────────────────────────
+function OnboardingFlow({ business, onComplete, onSave }) {
+  const [step,    setStep]    = useState(0);
+  const [hours,   setHours]   = useState(DAYS.reduce((acc,d)=>({...acc,[d]:{open:"8:00 AM",close:"7:00 PM",closed:d==="Sunday"}}),{}));
+  const [pricing, setPricing] = useState({ shirts:5, suits:18, dresses:14, pants:8, coats:20, everyday:4 });
+  const [saving,  setSaving]  = useState(false);
+
+  const STEPS = ["Welcome","Your Hours","Your Pricing","Go Live"];
+
+  const next = async () => {
+    if (step === STEPS.length - 1) {
+      setSaving(true);
+      await onSave({ hours, pricing, onboarding_complete:true, onboarding_step:STEPS.length });
+      setSaving(false);
+      onComplete();
+    } else {
+      if (step === 1) await onSave({ hours, onboarding_step:2 });
+      if (step === 2) await onSave({ pricing, onboarding_step:3 });
+      setStep(s => s + 1);
+    }
+  };
+
+  const trialEnd = business?.trial_ends_at ? new Date(business.trial_ends_at).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : "";
+
+  return (
+    <div style={{ minHeight:"100vh", background:`linear-gradient(160deg,${C.lavenderMist},#e8dff5)`, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
+      <div style={{ width:"min(680px,100%)", background:C.white, borderRadius:28, overflow:"hidden", boxShadow:`0 32px 80px rgba(91,61,143,0.18)` }}>
+
+        {/* Header */}
+        <div style={{ background:`linear-gradient(135deg,${C.lavenderDeep},${C.lavender})`, padding:"28px 40px 24px" }}>
+          <div style={{ fontSize:28, fontFamily:"Palatino Linotype,Georgia,serif", fontStyle:"italic", color:C.white, marginBottom:4 }}>dry.</div>
+          <div style={{ fontSize:12, color:`${C.white}70`, fontFamily:"Georgia", letterSpacing:1.5, textTransform:"uppercase" }}>Business Portal — Setup</div>
+          {/* Step progress */}
+          <div style={{ display:"flex", alignItems:"center", gap:0, marginTop:24 }}>
+            {STEPS.map((s, i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", flex:i<STEPS.length-1?1:"auto" }}>
+                <div style={{ width:28, height:28, borderRadius:"50%", background:i<=step?C.white:`${C.white}30`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, color:i<=step?C.lavenderDeep:`${C.white}70`, fontFamily:"Georgia", flexShrink:0, fontWeight:i===step?"bold":"normal" }}>{i+1}</div>
+                {i<STEPS.length-1 && <div style={{ flex:1, height:2, background:i<step?C.white:`${C.white}25`, margin:"0 8px" }} />}
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize:13, color:`${C.white}80`, fontFamily:"Georgia", marginTop:10 }}>{STEPS[step]}</div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding:"36px 40px" }}>
+
+          {/* Step 0 — Welcome */}
+          {step === 0 && (
+            <div>
+              <div style={{ fontSize:26, fontFamily:"Palatino Linotype,Georgia,serif", color:C.ink, marginBottom:10 }}>Welcome to Dry., {business?.name?.split(" ")[0] || "there"}!</div>
+              <div style={{ fontSize:15, color:C.inkMid, fontFamily:"Georgia", fontStyle:"italic", lineHeight:1.7, marginBottom:24 }}>
+                Your account is created and your listing is live. Let's take two minutes to finish setting up your profile so customers can find you and start booking.
+              </div>
+              <div style={{ background:C.lavenderGlow, border:`1.5px solid ${C.lavenderSoft}`, borderRadius:16, padding:"20px 24px", marginBottom:24 }}>
+                <div style={{ fontSize:13, color:C.lavenderDeep, fontFamily:"Palatino Linotype,Georgia,serif", marginBottom:12 }}>🌿 Your free trial</div>
+                <div style={{ fontSize:14, color:C.ink, fontFamily:"Georgia", lineHeight:1.7 }}>
+                  You have a <strong>14-day free trial</strong> — no credit card required. Your trial ends on <strong>{trialEnd}</strong>. After that, choose Basic ($149/month) or Pro ($299/month) to stay live.
+                </div>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:8 }}>
+                {[["✅","Account created","Your login is active"],["📋","Listing live","Customers can find you"],["⚙️","Profile ready","Services from your signup"],["🔔","Notifications on","Customers notified automatically"]].map(([icon,title,sub])=>(
+                  <div key={title} style={{ background:C.offWhite, borderRadius:14, padding:"14px 16px", display:"flex", gap:12, alignItems:"flex-start" }}>
+                    <div style={{ fontSize:20, flexShrink:0 }}>{icon}</div>
+                    <div>
+                      <div style={{ fontSize:13, color:C.ink, fontFamily:"Georgia" }}>{title}</div>
+                      <div style={{ fontSize:11, color:C.inkLight, fontFamily:"Georgia", fontStyle:"italic", marginTop:2 }}>{sub}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 1 — Hours */}
+          {step === 1 && (
+            <div>
+              <div style={{ fontSize:22, fontFamily:"Palatino Linotype,Georgia,serif", color:C.ink, marginBottom:6 }}>Set your hours</div>
+              <div style={{ fontSize:13, color:C.inkLight, fontFamily:"Georgia", fontStyle:"italic", marginBottom:24 }}>These show on your listing. You can update them anytime from Settings.</div>
+              {DAYS.map(day => (
+                <div key={day} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, gap:12 }}>
+                  <div style={{ fontSize:13, color:C.ink, fontFamily:"Georgia", width:100, flexShrink:0 }}>{day}</div>
+                  {hours[day]?.closed ? (
+                    <div style={{ flex:1, fontSize:13, color:C.inkLight, fontFamily:"Georgia", fontStyle:"italic" }}>Closed</div>
+                  ) : (
+                    <div style={{ display:"flex", alignItems:"center", gap:8, flex:1 }}>
+                      <input value={hours[day]?.open||""} onChange={e=>setHours(h=>({...h,[day]:{...h[day],open:e.target.value}}))} style={{ flex:1, padding:"8px 10px", borderRadius:8, border:`1px solid ${C.border}`, fontSize:12, fontFamily:"Georgia", color:C.ink, outline:"none", background:C.offWhite }} />
+                      <span style={{ fontSize:12, color:C.inkLight, flexShrink:0 }}>to</span>
+                      <input value={hours[day]?.close||""} onChange={e=>setHours(h=>({...h,[day]:{...h[day],close:e.target.value}}))} style={{ flex:1, padding:"8px 10px", borderRadius:8, border:`1px solid ${C.border}`, fontSize:12, fontFamily:"Georgia", color:C.ink, outline:"none", background:C.offWhite }} />
+                    </div>
+                  )}
+                  <div onClick={()=>setHours(h=>({...h,[day]:{...h[day],closed:!h[day]?.closed}}))} style={{ fontSize:11, color:hours[day]?.closed?C.success:C.inkLight, fontFamily:"Georgia", cursor:"pointer", flexShrink:0, textDecoration:"underline" }}>
+                    {hours[day]?.closed?"Open":"Close"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Step 2 — Pricing */}
+          {step === 2 && (
+            <div>
+              <div style={{ fontSize:22, fontFamily:"Palatino Linotype,Georgia,serif", color:C.ink, marginBottom:6 }}>Set your prices</div>
+              <div style={{ fontSize:13, color:C.inkLight, fontFamily:"Georgia", fontStyle:"italic", marginBottom:24 }}>Per-item prices shown to customers in the app. These are starting points — update anytime from Settings.</div>
+              {[["shirts","👔","Dress Shirts"],["suits","🤵","Suits"],["dresses","👗","Dresses"],["pants","👖","Trousers"],["coats","🧥","Coats"],["everyday","👚","Everyday Clothes"]].map(([key,icon,label])=>(
+                <div key={key} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 0", borderBottom:`1px solid ${C.borderLight}`, gap:16 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
+                    <span style={{ fontSize:20 }}>{icon}</span>
+                    <div style={{ fontSize:14, color:C.ink, fontFamily:"Georgia" }}>{label}</div>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:14, color:C.inkLight, fontFamily:"Georgia" }}>$</span>
+                    <input
+                      type="number"
+                      value={pricing[key]}
+                      onChange={e=>setPricing(p=>({...p,[key]:parseFloat(e.target.value)||0}))}
+                      style={{ width:70, padding:"8px 10px", borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:14, fontFamily:"Georgia", color:C.ink, outline:"none", background:C.offWhite, textAlign:"center" }}
+                    />
+                    <span style={{ fontSize:12, color:C.inkLight, fontFamily:"Georgia" }}>/ item</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Step 3 — Go Live */}
+          {step === 3 && (
+            <div style={{ textAlign:"center", padding:"20px 0" }}>
+              <div style={{ fontSize:52, marginBottom:16 }}>🎉</div>
+              <div style={{ fontSize:26, fontFamily:"Palatino Linotype,Georgia,serif", color:C.ink, marginBottom:12 }}>You're all set!</div>
+              <div style={{ fontSize:15, color:C.inkMid, fontFamily:"Georgia", fontStyle:"italic", lineHeight:1.7, marginBottom:28, maxWidth:400, margin:"0 auto 28px" }}>
+                Your listing is live, your hours are set, and your pricing is configured. Customers in your area can find and book you right now.
+              </div>
+              <div style={{ background:C.lavenderGlow, border:`1.5px solid ${C.lavenderSoft}`, borderRadius:16, padding:"18px 24px", marginBottom:24, textAlign:"left" }}>
+                <div style={{ fontSize:13, color:C.lavenderDeep, fontFamily:"Georgia", marginBottom:8, fontWeight:"bold" }}>What happens next</div>
+                {["When a customer books you, you'll see the order instantly in your dashboard.","Mark orders through the pipeline — received, cleaning, QC, ready — customers are notified at each step.","Your 14-day trial runs until " + trialEnd + ". No credit card needed until then."].map((t,i)=>(
+                  <div key={i} style={{ display:"flex", gap:10, marginBottom:8 }}>
+                    <span style={{ color:C.lavender, flexShrink:0 }}>→</span>
+                    <div style={{ fontSize:13, color:C.inkMid, fontFamily:"Georgia", fontStyle:"italic" }}>{t}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div style={{ display:"flex", justifyContent:step>0?"space-between":"flex-end", marginTop:32 }}>
+            {step > 0 && (
+              <button onClick={()=>setStep(s=>s-1)} style={{ padding:"12px 24px", background:"transparent", color:C.lavender, border:`1.5px solid ${C.lavenderSoft}`, borderRadius:12, fontSize:14, fontFamily:"Georgia", cursor:"pointer" }}>← Back</button>
+            )}
+            <button onClick={next} disabled={saving} style={{ padding:"13px 32px", background:saving?"#ccc":`linear-gradient(135deg,${C.lavenderDeep},${C.lavender})`, color:C.white, border:"none", borderRadius:12, fontSize:15, fontFamily:"Palatino Linotype,Georgia,serif", fontStyle:"italic", cursor:saving?"not-allowed":"pointer", boxShadow:`0 6px 20px rgba(123,94,167,0.3)` }}>
+              {saving?"Saving…":step===STEPS.length-1?"Go to Dashboard →":"Continue →"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Shell ────────────────────────────────────────────────────────────────────
 const META = {
   [VIEWS.DASHBOARD]: { title:"Dashboard",  sub:"Your business at a glance"                },
@@ -735,6 +923,7 @@ export default function App() {
   const [orders,      setOrders]      = useState([]);
   const [view,        setView]        = useState(VIEWS.DASHBOARD);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showPlanModal, setShowPlanModal] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({data:{session}})=>{setSession(session);setAuthLoading(false);});
@@ -770,7 +959,6 @@ export default function App() {
     if(data) setOrders(prev=>prev.map(o=>o.id===orderId?{...o,...data}:o));
   },[]);
 
-  // Settings save: writes to Supabase → consumer app sees changes via realtime
   const saveSettings = useCallback(async (updates)=>{
     if(!business?.id) return;
     const {data} = await supabase.from("businesses").update(updates).eq("id",business.id).select().single();
@@ -778,6 +966,12 @@ export default function App() {
   },[business?.id]);
 
   const signOut = async ()=>{ await supabase.auth.signOut(); setSession(null); };
+
+  const handleUpgradeClick = () => {
+    const subject = encodeURIComponent("Add Payment Method — " + (business?.name||""));
+    const body    = encodeURIComponent("Hi,\n\nI'd like to add a payment method for my Dry. subscription.\n\nBusiness: " + (business?.name||"") + "\nEmail: " + (business?.email||"") + "\nPlan: " + (business?.plan||"basic") + "\n\nThank you.");
+    window.location.href = `mailto:hello@drytheapp.com?subject=${subject}&body=${body}`;
+  };
 
   if (authLoading) return (
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:`linear-gradient(160deg,${C.lavenderMist},#e8dff5)` }}>
@@ -787,11 +981,18 @@ export default function App() {
 
   if (!session) return <AuthScreen onAuth={setSession} />;
 
+  // Show onboarding if not complete
+  if (business && !business.onboarding_complete) {
+    return <OnboardingFlow business={business} onSave={saveSettings} onComplete={() => setBusiness(b => ({...b, onboarding_complete:true}))} />;
+  }
+
   const meta = META[view];
   return (
     <div style={{ display:"flex", height:"100vh", background:C.offWhite, overflow:"hidden" }}>
+      {showPlanModal && <PlanModal business={business} onClose={()=>setShowPlanModal(false)} onUpgrade={()=>{setShowPlanModal(false);handleUpgradeClick();}} />}
       <Sidebar view={view} setView={setView} business={business} onSignOut={signOut} />
       <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+        <TrialBanner business={business} onUpgrade={handleUpgradeClick} />
         <TopBar title={meta.title} sub={meta.sub} business={business} />
         <div style={{ flex:1, overflowY:"auto", background:C.offWhite }}>
           {view===VIEWS.DASHBOARD && <DashboardView  setView={setView}   orders={orders}  business={business} />}

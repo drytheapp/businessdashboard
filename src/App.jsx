@@ -30,10 +30,11 @@ const STATUS_CFG = {
   in_cleaning: { label:"In Cleaning",   bg:"#EBF1FD",       color:"#3A6EC8",   dot:"#3A6EC8" },
   qc:          { label:"Quality Check", bg:"#FFF8E1",       color:"#B8860B",   dot:"#B8860B" },
   ready:       { label:"Ready",         bg:C.successLight,  color:C.success,   dot:C.success },
-  completed:   { label:"Completed",     bg:C.lavenderMist,  color:C.inkLight,  dot:C.inkLight},
+  completed:   { label:"Completed",     bg:C.successLight,  color:C.success,   dot:C.success },
+  picked_up:   { label:"Picked Up",     bg:C.lavenderMist,  color:C.inkLight,  dot:C.inkLight},
 };
-const NEXT_STATUS = { scheduled:"received", received:"in_cleaning", in_cleaning:"qc", qc:"ready" };
-const NEXT_LABEL  = { scheduled:"Mark Received", received:"Start Cleaning", in_cleaning:"Send to QC", qc:"Mark Ready" };
+const NEXT_STATUS = { scheduled:"received", received:"in_cleaning", in_cleaning:"qc", qc:"ready", ready:"completed" };
+const NEXT_LABEL  = { scheduled:"Mark Received", received:"Start Cleaning", in_cleaning:"Send to QC", qc:"Mark Ready", ready:"Mark Complete ✓" };
 
 const ALL_SERVICES = [
   { id:"dry_clean",   label:"Dry Clean"            },
@@ -305,7 +306,7 @@ function OrdersView({ orders, onAdvanceStatus }) {
   const [filter,   setFilter]   = useState("all");
   const [selected, setSelected] = useState(null);
   const [toast,    setToast]    = useState(null);
-  const filters = ["all","scheduled","received","in_cleaning","qc","ready"];
+  const filters = ["all","scheduled","received","in_cleaning","qc","ready","completed"];
   const filtered = filter==="all" ? orders : orders.filter(o=>o.status===filter);
 
   const advance = async (e, order) => {

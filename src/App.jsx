@@ -4,7 +4,13 @@ import { createClient } from "@supabase/supabase-js";
 // ─── Supabase ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL  || "https://YOUR_PROJECT.supabase.co";
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON || "YOUR_ANON_KEY";
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+  }
+});
 
 const C = {
   lavender:"#7B5EA7", lavenderDeep:"#5C3D8F", lavenderMid:"#9B7EC8",
@@ -955,7 +961,13 @@ export default function App() {
   },[business?.id]);
 
   const advanceStatus = useCallback(async (orderId, toStatus)=>{
-    await supabase.auth.getSession();
+    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    if (freshSession) {
+      await supabase.auth.setSession({
+        access_token: freshSession.access_token,
+        refresh_token: freshSession.refresh_token,
+      });
+    }
     const {data, error} = await supabase.from("orders").update({status:toStatus}).eq("id",orderId).select().single();
     if (error) { console.error("advanceStatus error:", error); return; }
     if(data) setOrders(prev=>prev.map(o=>o.id===orderId?{...o,...data}:o));

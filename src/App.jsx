@@ -955,7 +955,9 @@ export default function App() {
   },[business?.id]);
 
   const advanceStatus = useCallback(async (orderId, toStatus)=>{
-    const {data} = await supabase.from("orders").update({status:toStatus}).eq("id",orderId).select().single();
+    await supabase.auth.getSession();
+    const {data, error} = await supabase.from("orders").update({status:toStatus}).eq("id",orderId).select().single();
+    if (error) { console.error("advanceStatus error:", error); return; }
     if(data) setOrders(prev=>prev.map(o=>o.id===orderId?{...o,...data}:o));
   },[]);
 

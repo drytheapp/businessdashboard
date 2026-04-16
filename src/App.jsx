@@ -349,7 +349,7 @@ function OrdersView({ orders, onAdvanceStatus }) {
             {selected===o.id && (
               <div style={{ marginTop:16, paddingTop:16, borderTop:`1px solid ${C.borderLight}` }}>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
-                  {[["Order ID",o.id],["Scheduled",o.scheduled_date?`${o.scheduled_date} ${o.scheduled_time||""}`:"Walk-in"],["Total",`$${o.total}`],["Rush",o.rush?"Yes":"No"],["Hang Dry",o.services?.some(s=>s.hangDry)?"Yes — air dry only":"No"],["Quick Drop",o.is_quick_drop?"Yes":"No"]].map(([k,v])=>(
+                  {[["Order ID",o.id],["Scheduled",o.scheduled_date?`${new Date(o.scheduled_date+'T12:00:00').toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"})} ${o.scheduled_time||""}`.trim():"Walk-in"],["Total",`$${o.total}`],["Rush",o.rush?"Yes":"No"],["Hang Dry",o.services?.some(s=>s.hangDry)?"Yes — air dry only":"No"],["Quick Drop",o.is_quick_drop?"Yes":"No"]].map(([k,v])=>(
                     <div key={k} style={{ background:C.offWhite, borderRadius:12, padding:"12px 14px" }}>
                       <div style={{ fontSize:10, letterSpacing:1.2, color:C.inkLight, textTransform:"uppercase", fontFamily:"Georgia", marginBottom:4 }}>{k}</div>
                       <div style={{ fontSize:13, color:C.ink, fontFamily:"Georgia" }}>{v}</div>

@@ -126,7 +126,7 @@ function AuthScreen({ onAuth }) {
           </PrimaryBtn>
           <div style={{ fontSize:12, color:C.inkLight, fontFamily:"Georgia", textAlign:"center", marginTop:20, lineHeight:1.7 }}>
             Not listed on Dry. yet?{" "}
-            <a href="https://drytheapp.com/#b-signup" onClick={(e)=>{ e.preventDefault(); window.open('https://drytheapp.com','_blank'); }} style={{ color:C.lavender, textDecoration:"none", cursor:"pointer" }}>Get started free →</a>
+            <a href="https://drytheapp.com/#b-signup" onClick={(e)=>{ e.preventDefault(); window.open('https://drytheapp.com','_blank'); }} style={{ color:C.lavender, textDecoration:"none", cursor:"pointer" }}>Get started →</a>
           </div>
         </div>
       </div>
